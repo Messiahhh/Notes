@@ -312,11 +312,261 @@ console.log(4);
 
 ### class 语法
 
+在es5中，想写一个类，必须要这样写。
+
+```javascript
+function Point(x, y) {
+  this.x = x;
+  this.y = y;
+}
+
+Point.prototype.toString = function () {
+  return '(' + this.x + ', ' + this.y + ')';
+};
+```
+
+在es6中，引入了class关键字，不过说到底这只是一个es5的语法糖而已。
+
+用es6语法改些上面的类
+
+```javascript
+class Point {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+
+  toString() {
+    return '(' + this.x + ', ' + this.y + ')';
+  }
+}
+```
+
+静态方法
+
+```
+class Foo {
+  static classMethod() {
+    return 'hello';
+  }
+}
+//等价于
+function Foo () {}
+Foo.classMethod = function () {
+    
+}
+```
 
 
-### 模块　
 
-amd commonjs(require) exports module.exports　import 
+#### 继承
+
+
+
+es5
+
+```
+function People (name, age) {
+	this.name = name
+	this.age = age
+}
+
+People.prototype.getName = function () {
+	console.log(this.name)
+}
+
+function Student (name, age, id) {
+	People.call(this, name, age)
+	this.id = id
+}
+
+Student.prototype.__proto__ = People.prototype
+Student.prototype.getId = function () {
+    console.log(this.id)
+}
+```
+
+es6
+
+```
+class People {
+    constructor(name, age) {
+        this.name = name
+        this.age = age
+    }
+    
+    getName () {
+        console.log(this.name)
+    }
+}
+
+class Student extends People {
+    constructor (name, age, id) {
+        super(name, age)
+        this.id = id
+    }
+    
+    getId () {
+    	console.log(this.id)
+    }
+}
+```
+
+
+
+
+
+
+
+
+
+### 模块化　
+
+什么是模块化？为什么要模块化？举个最简单的例子，如果你写了一个库提供给其他人用，那么你所期待的是不会污染变量，只提供唯一的一个接口。比如引入jquery库的话，你就只需要接触$这个变量了， 也不用怕其他的细枝末节。
+
+##### 立即执行函数
+
+```
+(function () {
+	window.$ = xxx
+})()
+```
+
+别人只需要把你的代码引入即可。
+
+##### AMD模块化
+
+想使用AMD模块化必须先引入require.js这个包。
+
+使用**define**定义模块，使用**require**加载模块。
+
+##### Commonjs规范
+
+js文件就是模块，使用module.exports来设置对外暴露的值
+
+```
+//test.js
+function A() {
+	console.log('hello node')
+}
+
+module.exports = A
+```
+
+引入模块则使用require关键字（注：和AMD里的require不同）
+
+```
+//app.js (和test.js在一个目录下)
+
+let A = require('./test.js')
+
+A()//'hello node'
+```
+
+###### 问题1： module到底是什么，module.exports和exports有什么区别？
+
+其实module和exports可以理解成一个js文件自带的对象，module.exports和exports这两个对象保存的地址是相等的，指向堆内存中的一部分。
+
+我们可以实验一下，新建文件test.js
+
+```
+console.log(module);
+console.log(exports);
+console.log(module.exports === exports);
+
+$node test.js
+Module {
+  id: '.',
+  exports: {},
+  parent: null,
+  filename: 'C:\\messiah\\test.js',
+  loaded: false,
+  children: [],
+  paths: [ 'C:\\messiah\\node_modules', 'C:\\node_modules' ] }
+  {}
+  true
+```
+
+###### 问题2：require函数到底做了什么？
+
+其实就是把被require的js文件中的代码放进了一个立即执行函数里，并return module.exports
+
+比如test.js文件如下
+
+```
+var a = {
+    name: 'xiaoming',
+    age: 16
+}
+
+var b = '123';
+
+```
+
+1.js文件如下
+
+```
+var a = require('./test.js');
+```
+
+那么，1.js文件可以看成
+
+```
+var a = (function() {
+    var a = {
+        name: 'xiaoming',
+        age: 16
+    }
+
+    var b = '123';
+    
+    return module.exports;
+})()
+
+```
+
+这里也解释了为什么不要直接给exports赋值。因为我们知道，对象中保存的其实是指向堆内存中内存的地址。
+
+补充：一般模块分为核心模块，第三方模块，本地模块。
+
+核心模块比如http, fs, url等模块。第三方模块比如pm2 mysql等，第三方模块可以全局安装（npm install pm2 -g）和本地安装（npm install pm2）。本地模块就是自己写的模块。
+
+当我们require模块的时候，加不加路径也是有区别的。
+
+如果我们不加路径，比如require('http')，Node会依次在内置模块、全局模块和当前模块下查找模块。
+
+加路径一般都是用来加载本地模块，比如require('./test')
+
+##### UMD
+
+上面提到了三种模块化的方案，那么如果能综合一下就好了，因此有了UMD模块化，结构一般如下。
+
+```
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        // AMD
+        define(['jquery'], factory);
+    } else if (typeof exports === 'object') {
+        // Node, CommonJS之类的
+        module.exports = factory(require('jquery'));
+    } else {
+        // 浏览器全局变量(root 即 window)
+        root.returnExports = factory(root.jQuery);
+    }
+}(this, function ($) {
+    //    方法
+    function myFunc(){};
+ 
+    //    暴露公共方法
+    return myFunc;
+}));
+```
+
+##### ES6模块
+
+模块功能主要由两个命令构成：`export`和`import`。`export`命令用于规定模块的对外接口，`import`命令用于输入其他模块提供的功能。是未来的方向，不过现在也不能直接用，需要用babel编译后才行。
+
+
 
 
 
@@ -328,4 +578,12 @@ amd commonjs(require) exports module.exports　import
 
 参考
 
+[ECMAScript6入门-阮一峰](http://es6.ruanyifeng.com/)
+
 [[JavaScript：彻底理解同步、异步和事件循环(Event Loop)](https://segmentfault.com/a/1190000004322358)](https://segmentfault.com/a/1190000004322358)
+
+[模块化-阮一峰](http://www.ruanyifeng.com/blog/2012/10/asynchronous_module_definition.html)
+
+[模块化-伯乐园](http://web.jobbole.com/82238/)
+
+[Commonjs](https://zhuanlan.zhihu.com/p/26898693)
