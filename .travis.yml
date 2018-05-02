@@ -7,8 +7,8 @@ cache:
     - node_modules
 script:
   - ./deploy.sh
+  - git push -f git@github.com:$access_token/Messiahhh.github.io.git master
+  - cd -
 after_success:
   - echo "travis ci works"
-branches:
-  only:
-    - hexo
+branch: master
