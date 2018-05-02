@@ -1,0 +1,14 @@
+language: node_js
+sudo: required
+node_js:
+  - 8.11.1
+cache:
+  directories:
+    - node_modules
+script:
+  - ./deploy.sh
+after_success:
+  - echo "travis ci works"
+branches:
+  only:
+    - hexo
