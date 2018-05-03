@@ -6,17 +6,5 @@ cache:
   directories:
     - node_modules
 script:
-    - set -e
-
-    - npm run docs:build
-
-    - cd docs/.vuepress/dist
-
-
-    - git init
-    - git add -A
-    - git commit -m 'deploy'
-
-    - git push -f https://${GITHUB_TOKEN}@github.com/Messiahhh/Messiahhh.github.io.git   master
-    - cd -
+    - ./deploy.sh
 branch: master
